@@ -1,0 +1,30 @@
+mqtt:
+  enabled: false
+
+detectors:
+  rknn:
+    type: rknn
+    num_cores: 0
+
+ffmpeg:
+  hwaccel_args: preset-rkmpp
+
+cameras:
+  camera_san_truoc:
+    ffmpeg:
+      inputs:
+        - path: rtsp://admin:password@192.168.1.10:554/stream1
+          roles:
+            - detect
+            - record
+    detect:
+      width: 1280
+      height: 720
+      fps: 5
+    record:
+      enabled: true
+      retain:
+        days: 7
+        mode: motion
+    snapshots:
+      enabled: true
