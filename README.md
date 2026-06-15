@@ -1,64 +1,75 @@
 # 🚀 Frigate NVR trên Banana Pi BPI-CM5 Pro (Rockchip RK3576)
 
-Repository này cung cấp bộ file cấu hình (`docker-compose.yml`, `config.yml`) và hướng dẫn chi tiết để triển khai hệ thống camera giám sát **Frigate NVR** trên bo mạch **Banana Pi BPI-CM5 Pro**.
+Repository này cung cấp bộ file cấu hình `docker-compose.yml`, `config/config.yml` và hướng dẫn triển khai Frigate NVR trên Banana Pi BPI-CM5 Pro.
 
-Mục tiêu của dự án là thiết lập một môi trường Frigate tối ưu, tận dụng triệt để sức mạnh phần cứng của chip Rockchip nhằm giảm tải tối đa cho CPU.
+Mục tiêu là tận dụng NPU/VPU của Rockchip để chạy detect, decode video bằng phần cứng, và lưu recordings trực tiếp ra thẻ nhớ đã mount trên host.
 
 ## ✨ Tính năng Nổi bật
 
-* **Tăng tốc phần cứng AI (Hardware Object Detection):** Sử dụng NPU (Neural Processing Unit) của Rockchip thông qua driver RKNN để nhận diện đối tượng với tốc độ cao, tiêu thụ ít điện năng.
-* **Person Detection:** Cấu hình Frigate hỗ trợ nhận diện người (`person`) theo thời gian thực trên luồng camera, làm nền tảng cho cảnh báo, snapshot và lưu event.
-* **Giải mã Video bằng phần cứng (Hardware Video Decoding):** Sử dụng VPU/MPP của Rockchip để xử lý luồng video (H.264/H.265), giúp CPU luôn ở mức tải thấp.
-* **Tối ưu hóa Lưu trữ (RAM Disk):** Cấu hình `tmpfs` để đẩy các tác vụ ghi/xóa file tạm liên tục lên RAM, giúp bảo vệ tuổi thọ của thẻ nhớ MicroSD hoặc bộ nhớ eMMC.
-* **Bảo mật & Ổn định:** Cấu hình Docker ánh xạ trực tiếp các thiết bị (`/dev/dri`, `/dev/rga`, `/dev/rknn`) an toàn và sử dụng image Docker phiên bản tối ưu riêng cho Rockchip (`-rk`).
-
-## 📷 Khả năng Tương thích Camera
-
-Cấu hình này đã add được camera ONVIF của các hãng sau:
-
-- Dahua
-- Hikvision
-- Vogten
+* **Tăng tốc AI bằng NPU Rockchip:** dùng `rknn` để detect object với tải CPU thấp.
+* **Person Detection và Car Detection:** cấu hình hiện tại track `person` và `car`.
+* **Giải mã video bằng phần cứng:** dùng `preset-rkmpp` để giảm tải CPU khi xử lý RTSP.
+* **Tối ưu lưu trữ:** dùng `tmpfs` cho cache tạm và ghi recordings trực tiếp ra thẻ nhớ.
+* **Phù hợp camera ONVIF phổ biến:** đã add/test được với Dahua, Hikvision, Vogten.
 
 ## 🖼 Ảnh Minh họa
 
-### Giao diện và cấu hình Frigate
+### Add camera HIK
 
-![Frigate UI 1](image/1.%20image.png)
-![Frigate UI 2](image/2.%20image.png)
-![Frigate UI 3](image/3.%20image.png)
-![Frigate UI 4](image/4.%20image.png)
+<p><img src="image/1.%20image.png" alt="Add HIK 1"></p>
+<p><img src="image/2.%20image.png" alt="Add HIK 2"></p>
+<p><img src="image/4.%20image.png" alt="Add HIK 3"></p>
 
-### Nhận diện người và event
+### Add camera Dahua
 
-![Person Detection 1](image/5.%20image.png)
-![Person Detection 2](image/6%20image.png)
-![Person Detection 3](image/7.%20image.png)
+<p><img src="image/5.%20image.png" alt="Add Dahua 1"></p>
+<p><img src="image/6.%20image.png" alt="Add Dahua 2"></p>
+<p><img src="image/8.%20image.png" alt="Add Dahua 3"></p>
 
-Các ảnh trên minh họa việc add camera, xem live view, theo dõi event và nhận diện `person` trong Frigate.
+### Live view sau khi add camera
+
+<p><img src="image/9.%20image.png" alt="Live View"></p>
+
+### System metrics
+
+<p><img src="image/10.%20image.png" alt="System Metrics 1"></p>
+<p><img src="image/11.%20image.png" alt="System Metrics 2"></p>
+
+### Set zone cho detection
+
+<p><img src="image/12.%20image.png" alt="Detection Zone 1"></p>
+<p><img src="image/13.%20image.png" alt="Detection Zone 2"></p>
+
+### Snapshot person detection
+
+<p><img src="image/14.%20image.png" alt="Person Snapshot"></p>
+
+### Record khi có sự kiện AI
+
+<p><img src="image/15.%20image.png" alt="AI Record Event"></p>
+
+Các ảnh trên minh họa quy trình add camera HIK/Dahua, live view, metrics, cấu hình zone, snapshot `person detection` và phần record khi có sự kiện AI.
 
 ## 📁 Cấu trúc Repository
 
 ```text
-├── docker-compose.yml    # File triển khai Docker Compose (đã map NPU/VPU)
+├── docker-compose.yml
 ├── config/
-│   └── config.yml        # File cấu hình Frigate (Khai báo Camera, NPU, Video Decoder)
-└── README.md             # File giới thiệu này
-
+│   └── config.yml
+├── image/
+└── README.md
 ```
 
-## ⚙️ Yêu cầu Hệ thống (Prerequisites)
+## ⚙️ Yêu cầu Hệ thống
 
-Để chạy được cấu hình này, thiết bị của bạn cần đáp ứng:
+Trước khi chạy Docker, host cần đáp ứng:
 
-1. **Hệ điều hành:** Linux (Khuyến nghị Armbian hoặc Ubuntu tùy chỉnh cho BPI-CM5).
-2. **Kernel:** Phải có hậu tố `-rockchip` (ví dụ: `5.10.x-rockchip` hoặc `6.1.x-rockchip`).
-3. **Driver NPU/VPU:** Hệ điều hành phải nhận diện được `/dev/dri` (VPU) và driver rknpu phiên bản `v0.9.2` trở lên.
-4. **Docker & Docker Compose:** Đã được cài đặt sẵn trên Host OS.
+1. Linux có kernel hậu tố `-rockchip`.
+2. Có đủ thiết bị phần cứng Rockchip cho media/NPU.
+3. Docker và Docker Compose đã được cài.
+4. Thẻ nhớ đã được mount tại `/media/armsom/69E5-F78C`.
 
-## 🔍 Kiểm tra Phần cứng và Hệ điều hành
-
-Frigate yêu cầu hệ điều hành Linux đi kèm Rockchip BSP kernel `5.10` hoặc `6.1` và các driver cần thiết. Khuyến nghị dùng Armbian cho bo mạch này.
+## 🔍 Kiểm tra Phần cứng và OS
 
 Kiểm tra kernel:
 
@@ -68,7 +79,7 @@ uname -r
 
 Yêu cầu: kết quả phải có hậu tố `-rockchip`.
 
-Kiểm tra thiết bị VPU và NPU:
+Kiểm tra VPU/NPU:
 
 ```bash
 ls /dev/dri
@@ -76,23 +87,29 @@ ls /dev/dri
 
 Yêu cầu: có `renderD128` và `renderD129`.
 
-Kiểm tra phiên bản driver NPU:
+Kiểm tra version driver NPU:
 
 ```bash
 sudo cat /sys/kernel/debug/rknpu/version
 ```
 
-Yêu cầu: phiên bản `v0.9.2` trở lên.
+Yêu cầu: từ `v0.9.2` trở lên.
 
-Kiểm tra số core NPU:
+Kiểm tra tải và số core NPU:
 
 ```bash
 sudo cat /sys/kernel/debug/rknpu/load
 ```
 
-Ghi lại số core hiển thị để chỉnh `num_cores` trong `config/config.yml`.
+Kiểm tra thẻ nhớ đã mount đúng:
 
-Chỉ nên chạy Docker sau khi 4 bước kiểm tra trên đều đạt yêu cầu. Nếu kernel không có hậu tố `-rockchip`, không thấy `/dev/dri`, hoặc driver `rknpu` không đúng version thì Frigate sẽ không dùng được tăng tốc phần cứng như cấu hình trong repo này.
+```bash
+ls /media/armsom/69E5-F78C
+```
+
+Yêu cầu: path này phải tồn tại và ghi được.
+
+Chỉ nên chạy Docker sau khi các kiểm tra trên đều đạt. Nếu thiếu `-rockchip`, thiếu `/dev/dri`, sai driver `rknpu`, hoặc chưa mount thẻ nhớ đúng path thì cấu hình này sẽ không chạy đúng.
 
 ## 🚀 Triển khai
 
@@ -103,42 +120,66 @@ git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
 ```
 
-### 2. Tùy chỉnh cấu hình
+### 2. Kiểm tra và chỉnh `docker-compose.yml`
 
-- Mở `docker-compose.yml`: chỉnh đường dẫn lưu trữ video `./storage` nếu bạn muốn lưu ra ổ cứng ngoài hoặc SD card mount sẵn.
-- Mở `config/config.yml`: đổi `path` RTSP thành luồng camera thực tế, cập nhật tài khoản/mật khẩu, và chỉnh `num_cores` nếu bạn muốn ép số core NPU cụ thể.
+Compose hiện tại lưu media trực tiếp ra thẻ nhớ:
 
-### 3. Khởi chạy Frigate
+```yaml
+- /media/armsom/69E5-F78C:/media/frigate
+```
 
-Lần chạy đầu giữ nguyên `privileged: true` trong compose để xác minh Frigate nhìn thấy đầy đủ NPU/VPU của Rockchip:
+Nếu host của bạn mount thẻ nhớ ở path khác thì phải sửa lại đúng path thật.
+
+### 3. Thêm camera vào `config/config.yml`
+
+`config/config.yml` hiện đang để:
+
+```yaml
+cameras: {}
+```
+
+Bạn phải tự thêm camera thật trước khi chạy. Ví dụ:
+
+```yaml
+cameras:
+  camera_san_truoc:
+    ffmpeg:
+      inputs:
+        - path: rtsp://admin:password@192.168.1.10:554/stream1
+          roles:
+            - detect
+            - record
+```
+
+### 4. Khởi chạy
+
+Lần chạy đầu giữ nguyên `privileged: true` để xác minh Frigate nhìn thấy đầy đủ NPU/VPU:
 
 ```bash
 docker compose up -d
 ```
 
-### 4. Kiểm tra log và truy cập UI
+### 5. Kiểm tra log và truy cập UI
 
 ```bash
 docker compose logs -f
 ```
 
-Truy cập giao diện web tại:
+Truy cập web UI tại:
 
 ```text
 http://<IP_CUA_BANANA_PI>:5000
 ```
 
-Sau khi xác nhận hệ thống ổn định và tăng tốc phần cứng hoạt động đúng, bạn có thể giảm quyền container nếu muốn siết bảo mật hơn.
+Nếu gặp `Bus error`, kiểm tra lại `shm_size`, số camera, và tải detect thực tế.
 
-*Nếu gặp `Bus error` hoặc crash khi start, kiểm tra lại `shm_size` trong compose theo số lượng camera và độ phân giải detect thực tế.*
+## 🛠 Giải thích `docker-compose.yml`
 
-## 🛠 Giải thích các Tham số Quan trọng
-
-Phần này mô tả trực tiếp các tham số đang có trong [docker-compose.yml](/home/quangtv/Workspace/Gateway/Frigate/docker-compose.yml) và [config/config.yml](/home/quangtv/Workspace/Gateway/Frigate/config/config.yml), tham chiếu theo tài liệu Frigate chính thức.
-
-### `docker-compose.yml`
+File hiện tại:
 
 ```yaml
+version: "3.9"
+
 services:
   frigate:
     container_name: frigate
@@ -146,9 +187,9 @@ services:
     image: ghcr.io/blakeblackshear/frigate:stable-rk
     shm_size: "512mb"
     privileged: true
-    security_opt:
-      - apparmor=unconfined
-      - systempaths=unconfined
+    # security_opt:
+    #   - apparmor=unconfined
+    #   - systempaths=unconfined
     devices:
       - /dev/dri:/dev/dri
       - /dev/dma_heap:/dev/dma_heap
@@ -158,7 +199,7 @@ services:
       - /sys/:/sys/:ro
       - /etc/localtime:/etc/localtime:ro
       - ./config:/config
-      - ./storage:/media/frigate
+      - /media/armsom/69E5-F78C:/media/frigate
       - type: tmpfs
         target: /tmp/cache
         tmpfs:
@@ -171,33 +212,23 @@ services:
       - "8555:8555/udp"
 ```
 
-- `container_name: frigate`: đặt tên container cố định để dễ xem log, restart và debug.
-- `restart: unless-stopped`: tự khởi động lại sau reboot hoặc khi process trong container thoát ngoài ý muốn.
-- `image: ghcr.io/blakeblackshear/frigate:stable-rk`: dùng image Rockchip do Frigate phát hành, phù hợp cho `preset-rkmpp` và NPU/VPU trên RK3576.
-- `shm_size: "512mb"`: tăng shared memory cho `/dev/shm`; Frigate dùng vùng này để chứa raw decoded frames và một phần log runtime. Docker mặc định chỉ có `64MB`, dễ gây `Bus error` khi có nhiều camera hoặc detect resolution lớn.
-- `privileged: true`: mở rộng quyền truy cập thiết bị cho lần bring-up đầu. Cách này tiện để xác minh NPU/VPU hoạt động; sau khi ổn định có thể giảm quyền nếu bạn muốn siết bảo mật hơn.
-- `security_opt`: nới AppArmor và system path restrictions để container truy cập các interface phần cứng của host dễ hơn. Với Rockchip, mục này thường đi cùng mapping thiết bị.
-- `devices`:
-  - `/dev/dri`: giao tiếp phần cứng video decode/render.
-  - `/dev/dma_heap`: cấp phát DMA buffer cho pipeline media.
-  - `/dev/rga`: dùng Rockchip RGA cho scale/convert frame.
-  - `/dev/mpp_service`: truy cập Media Process Platform của Rockchip.
-- `volumes`:
-  - `/sys/:/sys/:ro`: cho container đọc thông tin thiết bị và driver từ host.
-  - `/etc/localtime:/etc/localtime:ro`: đồng bộ timezone của container với host.
-  - `./config:/config`: nơi Frigate đọc `config.yml` và ghi SQLite database.
-  - `./storage:/media/frigate`: nơi lưu clips, recordings, exports và dữ liệu media khác.
-  - `tmpfs -> /tmp/cache`: Frigate ghi recording segments tạm vào đây trước khi xử lý và chuyển sang storage chính; dùng RAM để giảm ghi liên tục lên eMMC/SD card.
-- `tmpfs.size: 1000000000`: giới hạn RAM disk `/tmp/cache` khoảng 1GB; tăng nếu bạn có nhiều camera bitrate cao và thấy cache đầy.
-- `ports`:
-  - `5000`: cổng truy cập web UI của Frigate trong cấu hình hiện tại.
-  - `8971`: cổng service phụ đã được expose theo compose, chỉ cần dùng khi bạn có nhu cầu tích hợp hoặc routing riêng.
-  - `8554`: RTSP restream do Frigate/go2rtc cung cấp.
-  - `8555/tcp` và `8555/udp`: WebRTC transport cho live view hoặc camera có hai chiều âm thanh.
+- `image: ghcr.io/blakeblackshear/frigate:stable-rk`: image Frigate cho Rockchip.
+- `shm_size: "512mb"`: tăng shared memory để tránh `Bus error`.
+- `privileged: true`: dùng cho lần bring-up đầu để dễ xác minh phần cứng.
+- `security_opt`: hiện đang comment; có thể bật lại nếu sau này muốn giảm phụ thuộc vào `privileged`.
+- `devices`: map thiết bị media/NPU của Rockchip vào container.
+- `/sys/:/sys/:ro`: cho container đọc thông tin driver và thiết bị host.
+- `./config:/config`: nơi Frigate đọc config và ghi DB.
+- `/media/armsom/69E5-F78C:/media/frigate`: nơi lưu recordings, clips, snapshots, exports trên thẻ nhớ.
+- `tmpfs -> /tmp/cache`: cache segment tạm trên RAM để giảm ghi lặp lên thẻ nhớ.
+- `5000`: cổng truy cập web UI.
+- `8971`: cổng service phụ đang expose theo compose.
+- `8554`: RTSP restream.
+- `8555/tcp`, `8555/udp`: WebRTC transport.
 
 ### `shm_size`
 
-Frigate dùng `/dev/shm` để chứa raw frames. Nếu thiếu RAM vùng này, container dễ crash với lỗi `Bus error`.
+Frigate dùng `/dev/shm` để giữ raw frames. Nếu thiếu vùng này, container dễ crash với `Bus error`.
 
 Công thức tham khảo:
 
@@ -205,24 +236,9 @@ Công thức tham khảo:
 ((width * height * 1.5 * 20 + 270480) / 1048576) * so_luong_camera + 40
 ```
 
-Ví dụ 2 camera `1920x1080` cần khoảng `160MB`. Mẫu trong repo dùng `512mb` để đủ cho vài camera.
+## 🛠 Giải thích `config/config.yml`
 
-### Đường dẫn lưu trữ
-
-- `/config`: chứa file cấu hình và SQLite database.
-- `/media/frigate`: chứa recordings, clips, snapshots, exports.
-
-Nếu muốn lưu sang SD card hoặc USB, sửa bind mount `./storage:/media/frigate` thành đường dẫn thật trên host, ví dụ `/mnt/sdcard/frigate_media:/media/frigate`.
-
-### `tmpfs`
-
-`/tmp/cache` là nơi Frigate ghi liên tục các đoạn video tạm. Dùng `tmpfs` để đẩy ghi tạm lên RAM, giảm hao mòn eMMC hoặc SD card.
-
-### Quyền truy cập phần cứng
-
-Repo này giữ `privileged: true` cho lần chạy đầu, đồng thời đã map sẵn các thiết bị Rockchip và `security_opt`. Sau khi xác nhận hệ thống ổn định, có thể bỏ `privileged: true` và giữ cấu hình truy cập thiết bị tối thiểu.
-
-### `config/config.yml`
+File hiện tại:
 
 ```yaml
 mqtt:
@@ -236,57 +252,94 @@ detectors:
 ffmpeg:
   hwaccel_args: preset-rkmpp
 
-cameras:
-  camera_san_truoc:
-    ffmpeg:
-      inputs:
-        - path: rtsp://admin:password@192.168.1.10:554/stream1
-          roles:
-            - detect
-            - record
-    detect:
-      width: 1280
-      height: 720
-      fps: 5
-    record:
-      enabled: true
-      retain:
-        days: 7
-        mode: motion
-    snapshots:
-      enabled: true
+go2rtc:
+  streams: {}
+
+detect:
+  enabled: true
+  fps: 5
+  min_initialized: 2
+  max_disappeared: 25
+  stationary:
+    classifier: true
+    interval: 50
+    threshold: 50
+
+record:
+  enabled: true
+  expire_interval: 60
+  sync_recordings: false
+  continuous:
+    days: 0
+  motion:
+    days: 0
+  alerts:
+    pre_capture: 5
+    post_capture: 5
+    retain:
+      days: 7
+      mode: active_objects
+  detections:
+    pre_capture: 5
+    post_capture: 5
+    retain:
+      days: 3
+      mode: active_objects
+
+objects:
+  track:
+    - person
+    - car
+
+snapshots:
+  enabled: true
+  bounding_box: true
+
+cameras: {}
+
+version: 0.17-0
 ```
 
-- `mqtt.enabled: false`: tắt MQTT. Theo docs, MQTT là tùy chọn; chỉ bắt buộc khi bạn tích hợp Home Assistant qua Frigate integration hoặc muốn publish event qua broker.
-- `detectors.rknn.type: rknn`: bật object detector dùng Rockchip NPU.
-- `detectors.rknn.num_cores: 0`: để Frigate tự chọn số NPU core. Theo docs detector Rockchip, `0` nghĩa là auto; tăng giá trị này khi bạn biết rõ SoC của mình có nhiều core và muốn ép hiệu năng cao hơn.
-- `ffmpeg.hwaccel_args: preset-rkmpp`: bật hardware video processing bằng preset MPP của Rockchip. Đây là preset Frigate docs khuyến nghị cho nền tảng Rockchip khi SoC hỗ trợ codec/độ phân giải của stream đầu vào.
-- `cameras.camera_san_truoc`: tên logical của camera trong Frigate. Nên dùng tên không dấu, không khoảng trắng để dễ quản lý.
-- `cameras.<name>.ffmpeg.inputs[].path`: URL RTSP thật của camera. Đây là tham số bạn bắt buộc phải đổi trước khi chạy.
-- `cameras.<name>.ffmpeg.inputs[].roles`: xác định stream này phục vụ tác vụ nào.
-  - `detect`: stream được decode để phục vụ object detection.
-  - `record`: stream được dùng cho recording pipeline.
-- `detect.width` và `detect.height`: độ phân giải Frigate dùng cho detect, không nhất thiết phải bằng độ phân giải gốc của stream. Để thấp hơn sẽ giảm tải CPU/NPU nhưng cũng có thể giảm chất lượng detect.
-- `detect.fps: 5`: số frame mỗi giây dùng cho detect. Docs mẫu của Frigate cũng dùng `5fps` như điểm cân bằng tốt cho đa số camera, đủ cho các bài toán như `person detection` trong đa số tình huống giám sát.
-- `record.enabled: true`: bật ghi hình cho camera này.
-- `record.retain.days: 7`: giữ recording trong 7 ngày trước khi Frigate dọn dẹp theo policy.
-- `record.retain.mode: motion`: chỉ giữ recording có motion. Nếu cần giữ toàn bộ 24/7, policy này phải đổi theo nhu cầu thực tế.
-- `snapshots.enabled: true`: bật lưu snapshot cho event của camera.
+- `mqtt.enabled: false`: tắt MQTT.
+- `detectors.rknn`: dùng NPU Rockchip; `num_cores: 0` là để tự chọn core.
+- `ffmpeg.hwaccel_args: preset-rkmpp`: bật decode bằng phần cứng Rockchip.
+- `go2rtc.streams: {}`: hiện chưa khai báo restream riêng.
+- `detect.enabled: true`: bật detect toàn cục.
+- `detect.fps: 5`: tốc độ detect phù hợp cho `person` và `car`.
+- `detect.min_initialized: 2`: object cần ổn định một vài frame trước khi được chấp nhận.
+- `detect.max_disappeared: 25`: giảm nhấp nháy tracking khi object tạm mất dấu.
+- `detect.stationary.*`: cấu hình xử lý object đứng yên.
+- `record.enabled: true`: bật record toàn cục.
+- `record.expire_interval: 60`: chu kỳ dọn dữ liệu hết hạn.
+- `record.sync_recordings: false`: giảm I/O đồng bộ không cần thiết.
+- `record.continuous.days: 0`: không giữ record liên tục 24/7.
+- `record.motion.days: 0`: không giữ policy record-motion riêng.
+- `record.alerts`: lưu alert clips với `pre_capture`, `post_capture`, giữ 7 ngày.
+- `record.detections`: lưu detection clips, giữ 3 ngày.
+- `objects.track`: hiện track `person` và `car`.
+- `snapshots.enabled: true`: bật snapshot.
+- `snapshots.bounding_box: true`: vẽ bounding box lên snapshot.
+- `cameras: {}`: chưa hardcode camera; bạn phải thêm camera thật.
+- `version: 0.17-0`: version schema hiện tại của config.
 
-### Khi nào cần chỉnh các tham số này
+## 🔧 Khi nào cần chỉnh cấu hình
 
-- Tăng `shm_size` nếu log có `Bus error`, camera detect ở độ phân giải cao, hoặc số camera tăng lên.
-- Tăng `tmpfs.size` nếu `/tmp/cache` đầy khi record nhiều stream cùng lúc.
-- Đổi `num_cores` khỏi `0` chỉ khi bạn muốn ép số core NPU cụ thể sau khi đã kiểm tra tải bằng `cat /sys/kernel/debug/rknpu/load`.
-- Giảm `detect.width`, `detect.height`, hoặc `detect.fps` nếu hệ thống quá tải.
-- Đổi `./storage` sang ổ USB/SSD nếu không muốn ghi media lên eMMC hoặc SD card.
+- Tăng `shm_size` nếu log báo `Bus error` hoặc số camera tăng.
+- Tăng `tmpfs.size` nếu `/tmp/cache` đầy khi record nhiều stream.
+- Đổi `num_cores` khỏi `0` nếu bạn muốn ép số core NPU cụ thể.
+- Giảm `detect.fps` nếu hệ thống quá tải.
+- Sửa volume `/media/armsom/69E5-F78C:/media/frigate` nếu thẻ nhớ của host mount ở path khác.
 
 ## ✅ Dấu hiệu Hoạt động Đúng
 
-Sau khi chạy `docker compose up -d`, kiểm tra `docker compose logs -f`.
+Sau khi chạy `docker compose up -d`, kiểm tra:
 
-Hệ thống được xem là hoạt động đúng khi:
+```bash
+docker compose logs -f
+```
 
-- không có lỗi liên quan `rknn`, `scale_rkrga`, `Bus error`
+Hệ thống được xem là ổn khi:
+
+- không có lỗi `rknn`, `scale_rkrga`, `Bus error`
 - Frigate nhận được hardware acceleration
-- truy cập được web UI tại `http://<IP_CUA_BANANA_PI>:5000`
+- truy cập được UI tại `http://<IP_CUA_BANANA_PI>:5000`

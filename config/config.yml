@@ -9,22 +9,49 @@ detectors:
 ffmpeg:
   hwaccel_args: preset-rkmpp
 
-cameras:
-  camera_san_truoc:
-    ffmpeg:
-      inputs:
-        - path: rtsp://admin:password@192.168.1.10:554/stream1
-          roles:
-            - detect
-            - record
-    detect:
-      width: 1280
-      height: 720
-      fps: 5
-    record:
-      enabled: true
-      retain:
-        days: 7
-        mode: motion
-    snapshots:
-      enabled: true
+go2rtc:
+  streams: {}
+
+detect:
+  enabled: true
+  fps: 5
+  min_initialized: 2
+  max_disappeared: 25
+  stationary:
+    classifier: true
+    interval: 50
+    threshold: 50
+
+record:
+  enabled: true
+  expire_interval: 60
+  sync_recordings: false
+  continuous:
+    days: 0
+  motion:
+    days: 0
+  alerts:
+    pre_capture: 5
+    post_capture: 5
+    retain:
+      days: 7
+      mode: active_objects
+  detections:
+    pre_capture: 5
+    post_capture: 5
+    retain:
+      days: 3
+      mode: active_objects
+
+objects:
+  track:
+    - person
+    - car
+
+snapshots:
+  enabled: true
+  bounding_box: true
+
+cameras: {}
+
+version: 0.17-0
